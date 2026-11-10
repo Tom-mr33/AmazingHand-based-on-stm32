@@ -68,6 +68,15 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(self.ctl.state, ControllerState.FAULT)
         self.assertEqual(self.ctl.last_health.stop_reason, proto.STOP_TARGET_TIMEOUT)
 
+    def test_reset_stays_idle(self):
+        self.assertTrue(self.ctl.grasp())
+        self.sim(300)
+        self.ctl.stop()
+        self.sim(100)
+        self.assertTrue(self.ctl.reset())
+        self.sim(700)
+        self.assertEqual(self.ctl.state, ControllerState.IDLE)
+
     def test_session_is_stable(self):
         first = self.ctl.session_id
         self.ctl.step()

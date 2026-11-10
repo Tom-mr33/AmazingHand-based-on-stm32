@@ -143,6 +143,7 @@ class FakeTransport(Transport):
             self.fault_bits = 0
             self.torque = False
             self._last_exec = 0
+            self._exec_set = False
             self.load = [0] * 8
             self._pending_operations.append(proto.Operation(self._op_id, op_type, 0))
         return self._op_id
