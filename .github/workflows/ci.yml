@@ -1,0 +1,16 @@
+name: smoke
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  host-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Host smoke (no hardware)
+        run: python tools/run_smoke.py

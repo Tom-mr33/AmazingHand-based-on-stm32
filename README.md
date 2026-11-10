@@ -23,13 +23,14 @@ STM32F103C8T6（当前字节泵；后续接管抓取 FSM/保护/看门狗）
 
 | 模块 | 状态 | 证据/边界 |
 |---|---|---|
-| 树莓派 + STM32 传输层 | 代码就绪 | `mcu_link.py` / `backend_mcu.py`；7 项无硬件单测通过 |
-| STM32 透传固件 | 代码就绪，未实机 | `firmware/stm32/`；**尚未编译/烧录**，首次上电需自检 |
-| STM32 控制协议/后端 | 协议层就绪 | `stm32_protocol.py` + `backend_stm32.py` + `ah_protocol.c`；固件调度/FSM 未接 |
-| Pi 侧软件 FSM（bring-up） | 代码就绪 | `backend_mcu` 跑软件 FSM；115200 限制 ≤100 Hz，正式控制改用 stm32 后端 |
-| SCS 协议/单舵机工具 | 代码就绪，未实机 | `blink_servo.py --via mcu`、`probe_servos.py --via mcu` |
-| 真实语音/视觉接入 | 未完成 | 现有 `kws.py` / `vision` 仍为骨架/Mock 入口 |
-| 实物标定/抓取 | 未开始 | 待单舵机 ID/方向/中位标定后再整手 |
+| STM32 控制协议 v2 | 代码就绪，host 冒烟 | `stm32_protocol_v2.py` / `ah_protocol_v2.*`；session/execution/actual/health/operation |
+| STM32 设备核心 | 代码就绪，host 冒烟 | `ah_scs.*` + `ah_device.*` + `ah_app.*`；SCS 调度/抓取执行/安全 |
+| Pi 总控 + CLI | 代码就绪，host 冒烟 | `host/app/controller/`；Motion/execution/actual、全停屏障、session |
+| fake STM32 standin | 代码就绪 | 协议级 e2e，无硬件 |
+| 统一冒烟入口/CI | 代码就绪 | `tools/run_smoke.py` + GitHub Actions |
+| STM32 固件 main.c 控制模式 | 未切换 | 当前 main.c 仍是 passthrough；核心 app 已通过 host 测试 |
+| 真实舵机/树莓派/相机 | 未接 | 硬件项全部未验证；视觉/语音暂缓 |
+| 实物标定/抓取 | 未开始 | 示例 schema 已有；真实值待 #24 |
 
 > 诚实边界：当前没有真实舵机、真实相机或真实抓取验收；不要用 PC 模拟结果替代。
 
@@ -82,13 +83,14 @@ Bookworm（Python 3.11）；旧版 Python 3.9 不支持部分类型语法。
 
 ## 开发状态
 
-- [x] 树莓派 + STM32 传输层/后端/单测
-- [x] STM32 透传固件工程（待实机编译/烧录）
-- [x] STM32 控制协议 + Pi 侧 `backend_stm32`（协议层）
-- [ ] STM32 固件 SCS 调度 + FSM/保护/看门狗（Phase 2）
-- [ ] 8 舵机 ID/方向/中位标定（下一优先级）
-- [ ] Pi 真实语音/视觉接入
-- [ ] 整手抓取/保持/释放与指标实测
+- [x] STM32 控制协议 v2（Python/C + golden vectors）
+- [x] SCS 调度 + 设备 grasp executor/安全 + 固件 app（host 测试）
+- [x] Pi 总控/CLI + fake STM32 standin（host 冒烟）
+- [x] 统一冒烟入口 + GitHub Actions CI
+- [ ] main.c 切换到 control 模式并做 ARM 构建
+- [ ] 8 舵机 ID/方向/中位标定（真实值）
+- [ ] 真实 UART/舵机/急停/看门狗验收
+- [ ] 视觉/语音（暂缓）
 
 进度详见 [docs/log/](docs/log/)。采购清单见 [docs/procurement.md](docs/procurement.md)。
 

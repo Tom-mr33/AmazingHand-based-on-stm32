@@ -72,7 +72,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-static UART_HandleTypeDef huart1;  /* SCS servo bus, PA9, 1 Mbps half-duplex */
+UART_HandleTypeDef huart1;  /* SCS servo bus, PA9, 1 Mbps half-duplex */
 static uint8_t ah_frame[AH_FRAME_MAX];
 static uint8_t ah_resp[AH_RESP_MAX];
 /* USER CODE END PV */
