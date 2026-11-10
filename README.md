@@ -28,7 +28,7 @@ STM32F103C8T6（当前字节泵；后续接管抓取 FSM/保护/看门狗）
 | Pi 总控 + CLI | 代码就绪，host 冒烟 | `host/app/controller/`；Motion/execution/actual、全停屏障、session |
 | fake STM32 standin | 代码就绪 | 协议级 e2e，无硬件 |
 | 统一冒烟入口/CI | 代码就绪 | `tools/run_smoke.py` + GitHub Actions |
-| STM32 固件 main.c 控制模式 | 未切换 | 当前 main.c 仍是 passthrough；核心 app 已通过 host 测试 |
+| STM32 固件 main.c 控制模式 | 已切换，ARM 构建通过 | `AH_CONTROL_APP=1` 默认 control；`0` 为 passthrough；**未烧录** |
 | 真实舵机/树莓派/相机 | 未接 | 硬件项全部未验证；视觉/语音暂缓 |
 | 实物标定/抓取 | 未开始 | 示例 schema 已有；真实值待 #24 |
 
@@ -87,7 +87,7 @@ Bookworm（Python 3.11）；旧版 Python 3.9 不支持部分类型语法。
 - [x] SCS 调度 + 设备 grasp executor/安全 + 固件 app（host 测试）
 - [x] Pi 总控/CLI + fake STM32 standin（host 冒烟）
 - [x] 统一冒烟入口 + GitHub Actions CI
-- [ ] main.c 切换到 control 模式并做 ARM 构建
+- [x] main.c 切到 control 模式 + Debug ARM 构建（RAM 2688 B / FLASH 18468 B）
 - [ ] 8 舵机 ID/方向/中位标定（真实值）
 - [ ] 真实 UART/舵机/急停/看门狗验收
 - [ ] 视觉/语音（暂缓）
