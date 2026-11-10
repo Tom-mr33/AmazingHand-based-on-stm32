@@ -50,16 +50,27 @@ docs/             架构、协议、开发日志
 ### PC 模拟链路（不接硬件）
 
 ~~~sh
-python host/tests/smoke_test_control.py
-python host/tests/smoke_test_backend.py
-python host/app/main.py --mock-voice "抓起香蕉,放下"
+python tools/run_smoke.py            # Python + C 全部 host 冒烟
+python host/app/main.py --mock-voice "抓起香蕉,放下"   # 旧 mock 路径
+~~~
+
+### Pi 总控 CLI（无硬件）
+
+~~~sh
+PYTHONPATH=host python -m app.controller.cli --transport fake --script "grasp,release,status"
+~~~
+
+真机串口（烧录 control 固件后）：
+
+~~~sh
+PYTHONPATH=host python -m app.controller.cli --transport serial --port /dev/serial0
 ~~~
 
 MuJoCo 实时演示见 [sim/LIVE_CONTROL.md](sim/LIVE_CONTROL.md)。
 
 ### 树莓派 + STM32
 
-1. 硬件：Pi、STM32F103C8T6、8 × SCS0009、**独立 5V 电源**、USB 相机、USB 麦克风。
+1. 硬件：Pi、STM32F103C8T6、8 × SCS0009、**独立 5V 电源**；当前不接相机/麦克风。
 2. 接线：Pi UART TX/RX ↔ STM32 PA3/PA2；STM32 PA9 ↔ 舵机 DATA；共地；
    舵机 5V 独立供电。完整表见
    [firmware/stm32/README.md](firmware/stm32/README.md)。
@@ -71,12 +82,14 @@ MuJoCo 实时演示见 [sim/LIVE_CONTROL.md](sim/LIVE_CONTROL.md)。
    python tools/probe_servos.py --port /dev/serial0 --via mcu
    ~~~
 
-5. 配置 `host/config/settings.yaml`：bring-up 用 `backend: mcu`；控制固件完成后用 `backend: stm32`。
-6. 跑主流程（当前仅 mock 语音入口）：
+5. 固件：`firmware/stm32` 默认 `AH_CONTROL_APP=1` control 模式；`0` 为 passthrough bring-up。
+6. 跑新 controller CLI：
 
    ~~~sh
-   python host/app/main.py --backend mcu --mock-voice "抓起香蕉,放下"
+   PYTHONPATH=host python -m app.controller.cli --transport serial --port /dev/serial0
    ~~~
+
+   旧 `host/app/main.py --backend mcu` 仍保留用于 bring-up；视觉/语音暂缓。
 
 Pi 依赖：`pip install -r requirements-pi.txt`。系统建议 Raspberry Pi OS 64-bit
 Bookworm（Python 3.11）；旧版 Python 3.9 不支持部分类型语法。
