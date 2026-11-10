@@ -20,6 +20,7 @@ PY_TESTS = [
     "host/tests/test_stm32_protocol_v2.py",
     "host/tests/test_controller.py",
     "host/tests/test_standin_e2e.py",
+    "host/tests/test_serial_transport.py",
     "host/tests/test_stm32_protocol.py",
     "host/tests/test_stm32_backend.py",
     "host/tests/test_mcu_link.py",
