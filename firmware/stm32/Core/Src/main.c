@@ -48,6 +48,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
+#include "ah_app.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -62,6 +63,7 @@
 #define AH_RESP_SILENCE_MS 3U   /* bus idle time that ends a response window */
 #define AH_RESP_WINDOW_MS 20U   /* overall response collection window */
 #define AH_RESP_FIRST_MS 2U     /* no first byte in this time => no response */
+#define AH_CONTROL_APP 1        /* 1 = ah_app control mode; 0 = old passthrough */
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -73,14 +75,20 @@
 
 /* USER CODE BEGIN PV */
 UART_HandleTypeDef huart1;  /* SCS servo bus, PA9, 1 Mbps half-duplex */
+static ah_app_t ah_app;
+#if !AH_CONTROL_APP
 static uint8_t ah_frame[AH_FRAME_MAX];
 static uint8_t ah_resp[AH_RESP_MAX];
+#endif
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 static void SCS_Bus_Init(void);
+#if !AH_CONTROL_APP
+static void SCS_DrainEcho(uint8_t len);
+#endif
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -127,6 +135,7 @@ static void SCS_Bus_Init(void)
  * at 1 Mbps (10 us); the echo drains while the servos keep their lines
  * released. Any leftover RX noise is flushed here as well.
  */
+#if !AH_CONTROL_APP
 static void SCS_DrainEcho(uint8_t len)
 {
   uint8_t b;
@@ -141,6 +150,7 @@ static void SCS_DrainEcho(uint8_t len)
     dropped++;
   }
 }
+#endif /* !AH_CONTROL_APP */
 
 /* USER CODE END 0 */
 
@@ -177,12 +187,19 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   SCS_Bus_Init();
+#if AH_CONTROL_APP
+  ah_app_init(&ah_app, NULL);
+#endif
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   for (;;)
   {
+#if AH_CONTROL_APP
+    ah_app_tick(&ah_app, HAL_GetTick());
+    HAL_Delay(1);
+#else
     uint8_t len = 0;
     if (HAL_UART_Receive(&huart2, &len, 1U, HAL_MAX_DELAY) != HAL_OK)
     {
@@ -237,6 +254,7 @@ int main(void)
     }
     /* USER CODE END WHILE */
     /* USER CODE BEGIN 3 */
+#endif /* AH_CONTROL_APP */
   }
   /* USER CODE END 3 */
 }
