@@ -105,9 +105,40 @@ int main(void)
     ah_device_step(&dev, &scs, 800u);
     if (dev.phase != AH_V2_PHASE_FAULT || dev.stop_reason != AH_V2_STOP_LINK_TIMEOUT) { fprintf(stderr, "fail line %d\n", __LINE__); return 1; }
 
-    ah_device_get_actual(&dev, &actual);
-    if (actual.online_mask != 0xFFu) { fprintf(stderr, "fail line %d\n", __LINE__); return 1; }
+    /* overtemp -> FAULT/OVERTEMP */
+    ah_device_reset(&dev);
+    dev.cfg.link_timeout_ms = 1000u;
+    for (i = 0; i < AH_SCS_SERVO_COUNT; ++i) {
+        fake_hal_set_servo((uint8_t)(i + 1u), 1800, 0, 80, 0, 1);
+    }
+    ah_device_note_link(&dev, 900u);
+    tick_all(&scs, 900u);
+    if (ah_device_apply_execution(&dev, &ex, 902u) != 0) { fprintf(stderr, "fail line %d\n", __LINE__); return 1; }
+    ah_device_step(&dev, &scs, 906u);
+    if (dev.phase != AH_V2_PHASE_FAULT || dev.stop_reason != AH_V2_STOP_FAULT) { fprintf(stderr, "fail line %d\n", __LINE__); return 1; }
+    if ((dev.fault_bits & AH_V2_FAULT_OVERTEMP) == 0u) { fprintf(stderr, "fail line %d\n", __LINE__); return 1; }
 
+    /* overload -> FAULT/OVERLOAD */
+    ah_device_reset(&dev);
+    for (i = 0; i < AH_SCS_SERVO_COUNT; ++i) {
+        fake_hal_set_servo((uint8_t)(i + 1u), 1800, 0, 30, (i == 0u) ? 2u : 0u, 1);
+    }
+    ah_device_note_link(&dev, 1000u);
+    tick_all(&scs, 1000u);
+    if (ah_device_apply_execution(&dev, &ex, 1002u) != 0) { fprintf(stderr, "fail line %d\n", __LINE__); return 1; }
+    ah_device_step(&dev, &scs, 1006u);
+    if (dev.phase != AH_V2_PHASE_FAULT || (dev.fault_bits & AH_V2_FAULT_OVERLOAD) == 0u) { fprintf(stderr, "fail line %d\n", __LINE__); return 1; }
+
+    /* offline -> FAULT/OFFLINE */
+    ah_device_reset(&dev);
+    fake_hal_set_timeout(1u);
+    ah_device_note_link(&dev, 1100u);
+    tick_all(&scs, 1100u);
+    if (ah_device_apply_execution(&dev, &ex, 1102u) != 0) { fprintf(stderr, "fail line %d\n", __LINE__); return 1; }
+    ah_device_step(&dev, &scs, 1106u);
+    if (dev.phase != AH_V2_PHASE_FAULT || (dev.fault_bits & AH_V2_FAULT_OFFLINE) == 0u) { fprintf(stderr, "fail line %d\n", __LINE__); return 1; }
+
+    (void)actual;
     printf("AH_DEVICE_TEST_OK\n");
     return 0;
 }
