@@ -33,6 +33,8 @@ typedef struct {
     uint16_t fault_bits;
     int16_t target[AH_DEV_SERVO_COUNT];
     int16_t close_target[AH_DEV_SERVO_COUNT];
+    uint16_t speed[AH_DEV_SERVO_COUNT];
+    uint16_t torque_limit[AH_DEV_SERVO_COUNT];
     uint16_t load_threshold[AH_DEV_SERVO_COUNT];
     uint32_t phase_start_ms;
     uint32_t last_exec_ms;
@@ -51,6 +53,9 @@ void ah_device_set_estop(ah_device_t *dev, uint8_t active, uint32_t now_ms);
 int ah_device_reset(ah_device_t *dev);
 
 void ah_device_get_targets(const ah_device_t *dev, int16_t out[AH_DEV_SERVO_COUNT]);
+void ah_device_get_profile(const ah_device_t *dev, uint16_t speed[AH_DEV_SERVO_COUNT],
+                           uint16_t torque_limit[AH_DEV_SERVO_COUNT]);
+uint8_t ah_device_torque_enabled(const ah_device_t *dev);
 void ah_device_get_actual(const ah_device_t *dev, ah_v2_actual_t *out);
 void ah_device_get_health(const ah_device_t *dev, ah_v2_health_t *out);
 
