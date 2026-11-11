@@ -189,6 +189,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   SCS_Bus_Init();
 #if AH_CONTROL_APP
+  ah_hal_uart_init();
   ah_app_init(&ah_app, NULL);
   ah_hal_watchdog_init();
 #endif
