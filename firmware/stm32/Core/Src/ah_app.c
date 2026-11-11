@@ -209,4 +209,5 @@ void ah_app_tick(ah_app_t *app, uint32_t now_ms)
         payload[7] = (uint8_t)((hb.uptime_ms >> 24) & 0xFFu);
         app_send(app, AH_V2_MSG_HEARTBEAT, payload, AH_V2_HEARTBEAT_SIZE);
     }
+    ah_hal_watchdog_feed();
 }

@@ -49,6 +49,7 @@
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include "ah_app.h"
+#include "ah_hal.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -189,6 +190,7 @@ int main(void)
   SCS_Bus_Init();
 #if AH_CONTROL_APP
   ah_app_init(&ah_app, NULL);
+  ah_hal_watchdog_init();
 #endif
   /* USER CODE END 2 */
 
