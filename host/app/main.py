@@ -1,4 +1,10 @@
-"""主状态机 —— 待命 → 识别 → 引导 → 抓取 → 保持 → 释放（architecture.md 数据流落地）。
+"""LEGACY：旧主状态机/视觉 mock 路径（正式入口是 app.controller.cli）。
+
+本模块保留给旧的 sim/mcu/mock 路径与历史测试。新的 Pi 总控请用::
+
+    PYTHONPATH=host python -m app.controller.cli --transport fake --script "grasp,status"
+
+旧说明：待命 → 识别 → 引导 → 抓取 → 保持 → 释放（architecture.md 数据流落地）。
 
 无硬件阶段运行方式（PC，backend=sim，全部 mock 输入）::
 
