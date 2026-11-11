@@ -1,10 +1,14 @@
-"""STM32 控制后端 —— Pi/PC ↔ STM32F103 实时控制协议。
+"""LEGACY v1：旧 STM32 控制后端（正式链路用 controller + SerialTransport v2）。
 
-与 backend_mcu（原始 SCS 透传）不同：本后端只发高层命令/收遥测，
-SCS 总线调度、抓取 FSM、保护与看门狗都在 STM32 内运行。
+本模块保留给旧 main.py/历史测试；协议是 v1，SCS 总线调度/抓取 FSM 仍按
+旧语义放在 STM32。新代码请使用::
 
-协议见 host/app/control/stm32_protocol.py 与
-docs/design/stm32_control_protocol.md。
+    host/app/controller/controller.py
+    host/app/controller/serial_transport.py
+    协议 v2: host/app/control/stm32_protocol_v2.py
+
+旧说明：与 backend_mcu（原始 SCS 透传）不同，本后端只发高层命令/收遥测。
+协议见 host/app/control/stm32_protocol.py 与 docs/design/stm32_control_protocol.md。
 """
 
 from __future__ import annotations

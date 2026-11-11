@@ -21,6 +21,11 @@ set(MX_Include_Dirs
 set(MX_Application_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/main.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/ah_protocol.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/ah_protocol_v2.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/ah_hal_stm32.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/ah_scs.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/ah_device.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/ah_app.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/gpio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/dma.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/tim.c

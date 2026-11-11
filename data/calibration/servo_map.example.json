@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "note": "示例/占位标定，不是实机测量结果；实机值在 #24 填入。",
+  "servos": [
+    {"id": 1, "middle_raw": 2048, "direction": 1, "min_raw": 700, "max_raw": 3400, "min_deg": -90.0, "max_deg": 90.0, "max_speed": 100, "torque_limit": 500, "load_threshold": 384},
+    {"id": 2, "middle_raw": 2048, "direction": 1, "min_raw": 700, "max_raw": 3400, "min_deg": -90.0, "max_deg": 90.0, "max_speed": 100, "torque_limit": 500, "load_threshold": 384},
+    {"id": 3, "middle_raw": 2048, "direction": 1, "min_raw": 700, "max_raw": 3400, "min_deg": -90.0, "max_deg": 90.0, "max_speed": 100, "torque_limit": 500, "load_threshold": 384},
+    {"id": 4, "middle_raw": 2048, "direction": 1, "min_raw": 700, "max_raw": 3400, "min_deg": -90.0, "max_deg": 90.0, "max_speed": 100, "torque_limit": 500, "load_threshold": 384},
+    {"id": 5, "middle_raw": 2048, "direction": -1, "min_raw": 700, "max_raw": 3400, "min_deg": -90.0, "max_deg": 90.0, "max_speed": 100, "torque_limit": 500, "load_threshold": 384},
+    {"id": 6, "middle_raw": 2048, "direction": -1, "min_raw": 700, "max_raw": 3400, "min_deg": -90.0, "max_deg": 90.0, "max_speed": 100, "torque_limit": 500, "load_threshold": 384},
+    {"id": 7, "middle_raw": 2048, "direction": -1, "min_raw": 700, "max_raw": 3400, "min_deg": -90.0, "max_deg": 90.0, "max_speed": 100, "torque_limit": 500, "load_threshold": 384},
+    {"id": 8, "middle_raw": 2048, "direction": -1, "min_raw": 700, "max_raw": 3400, "min_deg": -90.0, "max_deg": 90.0, "max_speed": 100, "torque_limit": 500, "load_threshold": 384}
+  ]
+}

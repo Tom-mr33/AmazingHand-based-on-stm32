@@ -1,4 +1,14 @@
-"""主状态机 —— 待命 → 识别 → 引导 → 抓取 → 保持 → 释放（architecture.md 数据流落地）。
+"""LEGACY 默认：旧主状态机/视觉 mock 路径；`--controller` 切到 v2 总控。
+
+默认行为保留给旧的 sim/mcu/mock 路径与历史测试。新的 Pi 总控可用::
+
+    python host/app/main.py --controller --controller-transport fake --controller-script "grasp,status"
+
+或正式 CLI::
+
+    PYTHONPATH=host python -m app.controller.cli --transport fake --script "grasp,status"
+
+旧说明：待命 → 识别 → 引导 → 抓取 → 保持 → 释放（architecture.md 数据流落地）。
 
 无硬件阶段运行方式（PC，backend=sim，全部 mock 输入）::
 
@@ -21,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -310,6 +321,61 @@ def build_backend(name: str, settings: dict) -> ServoBackend:
 from app.voice.kws import parse_zh_command  # noqa: E402
 
 
+def _run_controller(args: argparse.Namespace, settings: dict) -> int:
+    """New v2 controller path; keeps main.py as a compatibility entrypoint."""
+    from app.controller.controller import Controller
+    from app.controller.fake_transport import FakeTransport
+
+    if args.controller_transport == "fake":
+        transport = FakeTransport()
+        clock = lambda: transport.now_ms / 1000.0
+        is_fake = True
+    else:
+        from app.controller.serial_transport import SerialTransport
+
+        port = args.port or settings["stm32"]["port"]
+        transport = SerialTransport(port=port, baud=int(settings["stm32"]["baud"]))
+        clock = time.monotonic
+        is_fake = False
+
+    controller = Controller(transport, clock=clock)
+    controller.connect()
+
+    def simulate(ms: int) -> None:
+        if not is_fake:
+            controller.step()
+            return
+        for _ in range(max(1, ms // 100)):
+            transport.advance(100)
+            controller.step()
+
+    try:
+        for command in [c.strip() for c in args.controller_script.split(",") if c.strip()]:
+            simulate(300)
+            controller.step()
+            if command == "open":
+                controller.open()
+            elif command == "grasp":
+                controller.grasp()
+            elif command == "hold":
+                controller.hold()
+            elif command == "release":
+                controller.release()
+            elif command == "stop":
+                controller.stop()
+            elif command == "reset":
+                controller.reset()
+            elif command != "status":
+                print(f"unknown controller command: {command}", file=sys.stderr)
+                return 2
+            simulate(600)
+            controller.step()
+            print(controller.status())
+    finally:
+        controller.close()
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     arguments = list(sys.argv[1:] if argv is None else argv)
     if "--mujoco" in arguments:
@@ -325,9 +391,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--mock-voice", default=None,
                         help='mock 语音脚本，逗号分隔，如 "抓起香蕉,放下"')
     parser.add_argument("--config", default=None, help="settings.yaml 路径")
+    parser.add_argument("--controller", action="store_true",
+                        help="使用新的 v2 controller（替代旧 AppState 路径）")
+    parser.add_argument("--controller-transport", choices=["fake", "serial"], default="fake")
+    parser.add_argument("--controller-script", default="status",
+                        help='逗号分隔命令，如 "grasp,release,status"')
+    parser.add_argument("--port", default=None, help="controller serial 端口覆盖")
     args = parser.parse_args(argv)
 
     settings = load_settings(Path(args.config) if args.config else None)
+    if args.controller:
+        return _run_controller(args, settings)
     backend_name = args.backend or settings["backend"]
     backend = build_backend(backend_name, settings)
     selector = GraspSelector(DEFAULT_TABLE)

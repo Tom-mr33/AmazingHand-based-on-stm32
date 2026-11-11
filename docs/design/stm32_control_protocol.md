@@ -1,5 +1,8 @@
-# STM32 控制 AmazingHand 协议与状态机
+# STM32 控制 AmazingHand 协议与状态机（v1，已弃用）
 
+> **已弃用（2026-11-11）**：正式契约见 docs/adr/0001-stm32-control-protocol-v2.md 与
+> docs/design/stm32_control_protocol_v2.md。业务状态机已移到 Pi，STM32 只做设备层。
+>
 > 目标：STM32F103C8T6 作为**实时控制器**，负责 1 Mbps SCS 总线调度、抓取 FSM、
 > 力控/超时/掉线/过温保护与遥测；树莓派只发高层命令、收遥测、做视觉/策略/UI。
 > 这是对原 FPGA（servo_bus_ctrl + grasp_fsm + axi_lite_regs）的 C 语言替代。

@@ -1,4 +1,4 @@
-# firmware/stm32 — STM32F103C8T6 SCS 总线透传固件
+# firmware/stm32 — STM32F103C8T6 控制固件（control + passthrough）
 
 树莓派（或 PC）作为上层控制器，STM32F103C8T6 作为 **1 Mbps SCS 总线网关**：
 
@@ -9,13 +9,11 @@ Raspberry Pi / PC
             └─ USART1 PA9 单线半双工 1 Mbps ──> 8 × SCS0009（树状并联单总线）
 ```
 
-本固件是**字节泵**：SCS 帧格式、校验和、寄存器语义全部在
-`host/app/control/scs_protocol.py`；固件只负责把 PC 下发的原始 SCS 帧
-转发到总线，并把舵机响应原样回传。当前**不包含**抓取 FSM、力控保护或
-独立看门狗，这些在 Phase 1 仍由树莓派上的 Python 后端执行。
+默认 `AH_CONTROL_APP=1` 运行控制固件：协议 v2 会话/遥测、SCS 2 ms 调度、设备级 grasp executor、目标/链路看门狗与急停锁存。
+把 `main.c` 的 `AH_CONTROL_APP` 设为 0 可回到旧的 passthrough 字节泵，用于单舵机 bring-up/标定。
 
-> 本目录取回自分支 `feature/sim-model-rtl@903b462`（2026-10-06 原型），
-> 尚未在实机上编译/烧录/验证。首次使用请按下面步骤构建并自检。
+> **构建已验证（2026-11-11）**：Debug ARM 构建通过，RAM 2688 B / 20 KB，FLASH 18468 B / 64 KB。
+> **尚未实机烧录/接线/验收**；首次使用请按下面步骤构建并自检。
 
 ## 接线（必须遵守）
 
@@ -38,10 +36,10 @@ Raspberry Pi / PC
 ## 构建（Ubuntu / 树莓派，arm-none-eabi-gcc）
 
 ```sh
-sudo apt install -y cmake gcc-arm-none-eabi
+sudo apt install -y cmake ninja-build gcc-arm-none-eabi
 cd firmware/stm32
 cmake --preset Debug
-cmake --build build/Debug
+cmake --build --preset Debug
 # 产物：build/Debug/ah_passthrough.elf
 ```
 
@@ -54,7 +52,7 @@ STM32_Programmer_CLI -c port=SWD freq=4000 \
 
 SWD 四线：SWDIO / SWCLK / GND / 3V3。板载 USB-C 仅供电，不能当 USB CDC 用。
 
-## 帧协议（PC ↔ STM32，115200 8N1）
+## passthrough 帧协议（AH_CONTROL_APP=0，115200 8N1）
 
 ```
 PC -> STM32:  [len u8][len 字节原始 SCS 请求帧]      len = 1..64
@@ -67,13 +65,18 @@ STM32 -> PC:  [len u8][len 字节 SCS 响应]            len = 0 表示总线静
 - 115200 的 PC 链路是瓶颈：**控制更新率 ≤ 100 Hz**，不适合 1 kHz 实时环或
   抖动对比；1 kHz 环后续由 STM32 内部 FSM/调度实现，或改用更高带宽的 USB 总线适配器。
 
-## 控制协议模块（Phase 2 起步）
+## control 模式（AH_CONTROL_APP=1，默认）
 
-- `Core/Inc/ah_protocol.h`、`Core/Src/ah_protocol.c`：帧编解码/CRC16/命令/遥测/
-  DIRECT_TARGETS/CONFIG，与 Pi 侧 `host/app/control/stm32_protocol.py` 同格式；
-- 主机侧单测：`firmware/stm32/tests/test_ah_protocol.c`（gcc 可跑，见 tests/README.md）；
-- **当前 `main.c` 仍是 passthrough 字节泵**；下一步把 1 ms 调度、SCS 总线、FSM 接入；
-- 控制固件完成前，Pi 用 `backend_mcu` 做 bring-up；完成后切 `backend_stm32`。
+- `ah_protocol_v2.*`：协议 v2 帧、session、execution/actual/health/operation；
+- `ah_scs.*`：2 ms 时隙、8 路 READ、age/online/timeout；
+- `ah_device.*`：设备级 grasp executor、目标/链路看门狗、STOP/RESET、急停锁存；
+- `ah_app.*`：协议分发、遥测、heartbeat、operation；
+- `ah_hal_stm32.c`：USART1/2、HAL 时间/总线适配；
+- 主机 fake HAL/SCS bus 测试：`firmware/stm32/tests/`；
+- 无硬件冒烟：`python tools/run_smoke.py`；
+- ARM 构建：上面的 Debug/Release preset；CI 中有 firmware-build job。
+
+控制固件完成前，Pi 用 `backend_mcu` 做 bring-up；完成后切 `backend_stm32`/新 controller CLI。
 
 ## 上电自检（先单舵机，后整手）
 

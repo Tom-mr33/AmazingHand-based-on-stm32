@@ -23,13 +23,15 @@ STM32F103C8T6（当前字节泵；后续接管抓取 FSM/保护/看门狗）
 
 | 模块 | 状态 | 证据/边界 |
 |---|---|---|
-| 树莓派 + STM32 传输层 | 代码就绪 | `mcu_link.py` / `backend_mcu.py`；7 项无硬件单测通过 |
-| STM32 透传固件 | 代码就绪，未实机 | `firmware/stm32/`；**尚未编译/烧录**，首次上电需自检 |
-| STM32 控制协议/后端 | 协议层就绪 | `stm32_protocol.py` + `backend_stm32.py` + `ah_protocol.c`；固件调度/FSM 未接 |
-| Pi 侧软件 FSM（bring-up） | 代码就绪 | `backend_mcu` 跑软件 FSM；115200 限制 ≤100 Hz，正式控制改用 stm32 后端 |
-| SCS 协议/单舵机工具 | 代码就绪，未实机 | `blink_servo.py --via mcu`、`probe_servos.py --via mcu` |
-| 真实语音/视觉接入 | 未完成 | 现有 `kws.py` / `vision` 仍为骨架/Mock 入口 |
-| 实物标定/抓取 | 未开始 | 待单舵机 ID/方向/中位标定后再整手 |
+| STM32 控制协议 v2 | 代码就绪，host 冒烟 | `stm32_protocol_v2.py` / `ah_protocol_v2.*`；session/execution/actual/health/operation |
+| STM32 设备核心 | 代码就绪，host 冒烟 | `ah_scs.*` + `ah_device.*` + `ah_app.*`；SCS 调度/抓取执行/安全 |
+| Pi 总控 + CLI | 代码就绪，host 冒烟 | `host/app/controller/`；Motion/execution/actual、全停屏障、session |
+| fake STM32 standin | 代码就绪 | 协议级 e2e，无硬件 |
+| 统一冒烟入口/CI | 代码就绪 | `tools/run_smoke.py` + GitHub Actions |
+| STM32 固件 main.c 控制模式 | 已切换，ARM 构建通过 | `AH_CONTROL_APP=1` 默认 control；`0` 为 passthrough；**未烧录** |
+| 真实舵机/树莓派/相机 | 未接 | 硬件项全部未验证；视觉/语音暂缓 |
+| 实物标定/抓取 | 未开始 | 示例 schema 已有；流程见 [docs/design/calibration.md](docs/design/calibration.md)，真实值待 #24 |
+| 安全验收 | host 部分覆盖 | 矩阵见 [docs/design/safety_matrix.md](docs/design/safety_matrix.md)；真实项待 #31 |
 
 > 诚实边界：当前没有真实舵机、真实相机或真实抓取验收；不要用 PC 模拟结果替代。
 
@@ -49,16 +51,29 @@ docs/             架构、协议、开发日志
 ### PC 模拟链路（不接硬件）
 
 ~~~sh
-python host/tests/smoke_test_control.py
-python host/tests/smoke_test_backend.py
-python host/app/main.py --mock-voice "抓起香蕉,放下"
+python tools/run_smoke.py            # Python + C 全部 host 冒烟
+python host/app/main.py --mock-voice "抓起香蕉,放下"   # 旧 mock 路径
+~~~
+
+### Pi 总控 CLI（无硬件）
+
+~~~sh
+PYTHONPATH=host python -m app.controller.cli --transport fake --script "grasp,release,status"
+# 或兼容入口：
+python host/app/main.py --controller --controller-transport fake --controller-script "grasp,release,status"
+~~~
+
+真机串口（烧录 control 固件后）：
+
+~~~sh
+PYTHONPATH=host python -m app.controller.cli --transport serial --port /dev/serial0
 ~~~
 
 MuJoCo 实时演示见 [sim/LIVE_CONTROL.md](sim/LIVE_CONTROL.md)。
 
 ### 树莓派 + STM32
 
-1. 硬件：Pi、STM32F103C8T6、8 × SCS0009、**独立 5V 电源**、USB 相机、USB 麦克风。
+1. 硬件：Pi、STM32F103C8T6、8 × SCS0009、**独立 5V 电源**；当前不接相机/麦克风。
 2. 接线：Pi UART TX/RX ↔ STM32 PA3/PA2；STM32 PA9 ↔ 舵机 DATA；共地；
    舵机 5V 独立供电。完整表见
    [firmware/stm32/README.md](firmware/stm32/README.md)。
@@ -70,25 +85,29 @@ MuJoCo 实时演示见 [sim/LIVE_CONTROL.md](sim/LIVE_CONTROL.md)。
    python tools/probe_servos.py --port /dev/serial0 --via mcu
    ~~~
 
-5. 配置 `host/config/settings.yaml`：bring-up 用 `backend: mcu`；控制固件完成后用 `backend: stm32`。
-6. 跑主流程（当前仅 mock 语音入口）：
+5. 固件：`firmware/stm32` 默认 `AH_CONTROL_APP=1` control 模式；`0` 为 passthrough bring-up。
+6. 跑新 controller CLI：
 
    ~~~sh
-   python host/app/main.py --backend mcu --mock-voice "抓起香蕉,放下"
+   PYTHONPATH=host python -m app.controller.cli --transport serial --port /dev/serial0
    ~~~
+
+   旧 `host/app/main.py --backend mcu` 仍保留用于 bring-up；视觉/语音暂缓。
 
 Pi 依赖：`pip install -r requirements-pi.txt`。系统建议 Raspberry Pi OS 64-bit
 Bookworm（Python 3.11）；旧版 Python 3.9 不支持部分类型语法。
+完整部署/接线/验收见 [docs/design/pi_deploy.md](docs/design/pi_deploy.md)。
 
 ## 开发状态
 
-- [x] 树莓派 + STM32 传输层/后端/单测
-- [x] STM32 透传固件工程（待实机编译/烧录）
-- [x] STM32 控制协议 + Pi 侧 `backend_stm32`（协议层）
-- [ ] STM32 固件 SCS 调度 + FSM/保护/看门狗（Phase 2）
-- [ ] 8 舵机 ID/方向/中位标定（下一优先级）
-- [ ] Pi 真实语音/视觉接入
-- [ ] 整手抓取/保持/释放与指标实测
+- [x] STM32 控制协议 v2（Python/C + golden vectors）
+- [x] SCS 调度 + 设备 grasp executor/安全 + 固件 app（host 测试）
+- [x] Pi 总控/CLI + fake STM32 standin（host 冒烟）
+- [x] 统一冒烟入口 + GitHub Actions CI
+- [x] main.c 切到 control 模式 + Debug ARM 构建（RAM 2688 B / FLASH 18468 B）
+- [ ] 8 舵机 ID/方向/中位标定（真实值）
+- [ ] 真实 UART/舵机/急停/看门狗验收
+- [ ] 视觉/语音（暂缓）
 
 进度详见 [docs/log/](docs/log/)。采购清单见 [docs/procurement.md](docs/procurement.md)。
 
