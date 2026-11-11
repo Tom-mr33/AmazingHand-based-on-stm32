@@ -69,3 +69,20 @@ bool ah_hal_uart_write(const uint8_t *data, size_t len)
     }
     return HAL_UART_Transmit(&huart2, (uint8_t *)data, (uint16_t)len, 20u) == HAL_OK;
 }
+
+void ah_hal_watchdog_init(void)
+{
+    /* Direct IWDG registers: LSI 40 kHz / 64 * 312 ~= 500 ms. */
+    IWDG->KR = 0xCCCCu;  /* start */
+    IWDG->KR = 0x5555u;  /* unlock PR/RLR */
+    IWDG->PR = 4u;       /* /64 */
+    IWDG->RLR = 312u;
+    while (IWDG->SR != 0u) {
+    }
+    IWDG->KR = 0xAAAAu;  /* reload */
+}
+
+void ah_hal_watchdog_feed(void)
+{
+    IWDG->KR = 0xAAAAu;
+}

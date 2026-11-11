@@ -159,3 +159,11 @@ bool ah_hal_uart_write(const uint8_t *data, size_t len)
     g_uart_tx_len += len;
     return true;
 }
+
+void ah_hal_watchdog_init(void)
+{
+}
+
+void ah_hal_watchdog_feed(void)
+{
+}
