@@ -59,6 +59,8 @@ python host/app/main.py --mock-voice "抓起香蕉,放下"   # 旧 mock 路径
 
 ~~~sh
 PYTHONPATH=host python -m app.controller.cli --transport fake --script "grasp,release,status"
+# 或兼容入口：
+python host/app/main.py --controller --controller-transport fake --controller-script "grasp,release,status"
 ~~~
 
 真机串口（烧录 control 固件后）：

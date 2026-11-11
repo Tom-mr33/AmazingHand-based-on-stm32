@@ -1,6 +1,10 @@
-"""LEGACY：旧主状态机/视觉 mock 路径（正式入口是 app.controller.cli）。
+"""LEGACY 默认：旧主状态机/视觉 mock 路径；`--controller` 切到 v2 总控。
 
-本模块保留给旧的 sim/mcu/mock 路径与历史测试。新的 Pi 总控请用::
+默认行为保留给旧的 sim/mcu/mock 路径与历史测试。新的 Pi 总控可用::
+
+    python host/app/main.py --controller --controller-transport fake --controller-script "grasp,status"
+
+或正式 CLI::
 
     PYTHONPATH=host python -m app.controller.cli --transport fake --script "grasp,status"
 

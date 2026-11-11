@@ -4,7 +4,7 @@
 
 | 路径 | 状态 | 用途 | 正式替代 |
 |---|---|---|---|
-| host/app/main.py | LEGACY | 旧视觉/mock 主状态机、历史冒烟 | host/app/controller/cli.py |
+| host/app/main.py | LEGACY 默认 | 旧视觉/mock 主状态机、历史冒烟 | `--controller` 或 host/app/controller/cli.py |
 | host/app/control/backend_stm32.py | LEGACY v1 | 旧 FSM/遥测后端 | controller + serial_transport.py |
 | host/app/control/stm32_protocol.py | LEGACY v1 | 旧协议编解码 | stm32_protocol_v2.py |
 | host/app/control/backend_mcu.py | bring-up | 原始 SCS 透传（115200） | control 固件 + serial_transport |
