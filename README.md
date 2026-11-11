@@ -31,6 +31,7 @@ STM32F103C8T6（当前字节泵；后续接管抓取 FSM/保护/看门狗）
 | STM32 固件 main.c 控制模式 | 已切换，ARM 构建通过 | `AH_CONTROL_APP=1` 默认 control；`0` 为 passthrough；**未烧录** |
 | 真实舵机/树莓派/相机 | 未接 | 硬件项全部未验证；视觉/语音暂缓 |
 | 实物标定/抓取 | 未开始 | 示例 schema 已有；流程见 [docs/design/calibration.md](docs/design/calibration.md)，真实值待 #24 |
+| 安全验收 | host 部分覆盖 | 矩阵见 [docs/design/safety_matrix.md](docs/design/safety_matrix.md)；真实项待 #31 |
 
 > 诚实边界：当前没有真实舵机、真实相机或真实抓取验收；不要用 PC 模拟结果替代。
 
