@@ -97,6 +97,9 @@ static void handle_frame(ah_app_t *app, const ah_v2_frame_t *frame)
             send_accept(app, AH_V2_ACCEPT_PROFILE_MISMATCH);
             return;
         }
+        if (app->session_ok != 0u) {
+            ah_device_stop(&app->dev, AH_V2_STOP_SESSION_RESET, app->now_ms);
+        }
         app->session_id = hello.session_id;
         app->session_ok = 1u;
         ah_device_note_link(&app->dev, app->now_ms);
@@ -159,6 +162,8 @@ void ah_app_tick(ah_app_t *app, uint32_t now_ms)
     size_t count;
     size_t i;
     int16_t targets[AH_SCS_SERVO_COUNT];
+    uint16_t speed[AH_SCS_SERVO_COUNT];
+    uint16_t torque_limit[AH_SCS_SERVO_COUNT];
     if (app == NULL) {
         return;
     }
@@ -175,7 +180,10 @@ void ah_app_tick(ah_app_t *app, uint32_t now_ms)
     if ((now_ms - app->last_scs_ms) >= AH_SCS_SLOT_MS) {
         app->last_scs_ms = now_ms;
         ah_device_get_targets(&app->dev, targets);
+        ah_device_get_profile(&app->dev, speed, torque_limit);
         ah_scs_set_targets(&app->scs, targets);
+        ah_scs_set_profile(&app->scs, speed, torque_limit);
+        ah_scs_set_torque(&app->scs, ah_device_torque_enabled(&app->dev));
         ah_scs_tick(&app->scs, now_ms);
     }
     ah_device_step(&app->dev, &app->scs, now_ms);
