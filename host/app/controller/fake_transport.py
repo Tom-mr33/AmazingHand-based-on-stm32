@@ -17,7 +17,7 @@ class FakeTransport(Transport):
         self.fault_bits = 0
         self.torque = False
         self.target = [2048] * 8
-        self.close = [2048] * 8
+        self.close_target = [2048] * 8
         self.threshold = [384] * 8
         self.raw = [2048] * 8
         self.load = [0] * 8
@@ -72,7 +72,7 @@ class FakeTransport(Transport):
         elapsed = self.now_ms - self._phase_start
         if self.phase == proto.PHASE_PREGRASP and elapsed >= 300:
             self.phase = proto.PHASE_CLOSING
-            self.target = list(self.close)
+            self.target = list(self.close_target)
             self._phase_start = self.now_ms
         elif self.phase == proto.PHASE_CLOSING:
             self._move_toward()
@@ -118,7 +118,7 @@ class FakeTransport(Transport):
         self.stop_reason = proto.STOP_NONE
         self.fault_bits = 0
         self.target = list(execution.target)
-        self.close = list(execution.close)
+        self.close_target = list(execution.close)
         self.threshold = list(execution.load_threshold)
         self._phase_start = self.now_ms
         self.torque = True
