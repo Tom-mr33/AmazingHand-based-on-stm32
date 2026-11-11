@@ -128,6 +128,17 @@ int main(void)
     }
     if (!saw_operation) { fprintf(stderr, "fail line %d\n", __LINE__); return 1; }
 
+    /* new session must stop the old device before accepting new execution */
+    {
+        ah_v2_hello_t hello = { AH_V2_VERSION, AH_V2_NODE_PI, 0x55667788u, 1u, 0u };
+        n = ah_v2_build_hello(4u, &hello, frame, sizeof(frame));
+        feed_uart(frame, n);
+    }
+    ah_app_tick(&app, 28u);
+    if (app.dev.stop_reason != AH_V2_STOP_SESSION_RESET) {
+        fprintf(stderr, "fail line %d\n", __LINE__); return 1;
+    }
+
     printf("AH_APP_TEST_OK\n");
     return 0;
 }

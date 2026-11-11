@@ -33,6 +33,7 @@ class FakeTransport(Transport):
         self._op_id = 0
         self.last_heartbeat_seen = 0
         self.mode = 0
+        self.reject_reset = False
 
     def connect(self) -> proto.Accept:
         return proto.Accept(
@@ -138,6 +139,9 @@ class FakeTransport(Transport):
     def send_operation(self, op_type: int, data: bytes = b"") -> int:
         self._op_id = (self._op_id + 1) & 0xFFFFFFFF
         if op_type == proto.OP_RESET:
+            if self.reject_reset:
+                self._pending_operations.append(proto.Operation(self._op_id, op_type, 1))
+                return self._op_id
             self.phase = proto.PHASE_IDLE
             self.stop_reason = proto.STOP_NONE
             self.fault_bits = 0

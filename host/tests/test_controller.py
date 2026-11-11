@@ -53,7 +53,20 @@ class ControllerTests(unittest.TestCase):
         self.assertTrue(self.ctl.stop_confirmed)
         self.assertFalse(self.ctl.grasp())
         self.assertTrue(self.ctl.reset())
+        self.assertEqual(self.ctl.state, ControllerState.ESTOP)
+        self.sim(100)
         self.assertEqual(self.ctl.state, ControllerState.IDLE)
+
+    def test_reset_rejected_goes_fault(self):
+        self.assertTrue(self.ctl.grasp())
+        self.sim(300)
+        self.ctl.stop()
+        self.sim(100)
+        self.fake.reject_reset = True
+        self.assertTrue(self.ctl.reset())
+        self.sim(100)
+        self.assertEqual(self.ctl.state, ControllerState.FAULT)
+        self.assertIn("reset rejected", self.ctl.error)
 
     def test_link_timeout(self):
         self.fake.link_down = True
@@ -76,6 +89,10 @@ class ControllerTests(unittest.TestCase):
         self.assertTrue(self.ctl.reset())
         self.sim(700)
         self.assertEqual(self.ctl.state, ControllerState.IDLE)
+
+    def test_close_sends_stop(self):
+        self.ctl.close()
+        self.assertEqual(self.fake.stop_reason, proto.STOP_USER)
 
     def test_session_is_stable(self):
         first = self.ctl.session_id

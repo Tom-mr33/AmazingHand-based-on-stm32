@@ -46,6 +46,8 @@ void ah_device_init(ah_device_t *dev, const ah_device_config_t *cfg)
     for (i = 0; i < AH_DEV_SERVO_COUNT; ++i) {
         dev->target[i] = dev->cfg.open_target_default;
         dev->close_target[i] = dev->cfg.open_target_default;
+        dev->speed[i] = 0u;
+        dev->torque_limit[i] = 0u;
         dev->load_threshold[i] = dev->cfg.load_threshold_default;
     }
 }
@@ -76,13 +78,13 @@ static void fill_actual(ah_device_t *dev, const ah_scs_t *scs, uint32_t now_ms)
         }
     }
     dev->actual.online_mask = mask;
-    dev->actual.sample_time_ms = now_ms;
     dev->actual.age_ms = 0u;
     for (i = 0; i < AH_DEV_SERVO_COUNT; ++i) {
         if (scs->fb[i].age_ms > dev->actual.age_ms) {
             dev->actual.age_ms = scs->fb[i].age_ms;
         }
     }
+    dev->actual.sample_time_ms = now_ms - dev->actual.age_ms;
 }
 
 void ah_device_stop(ah_device_t *dev, uint8_t reason, uint32_t now_ms)
@@ -139,6 +141,8 @@ int ah_device_apply_execution(ah_device_t *dev, const ah_v2_execution_t *exec, u
     for (i = 0; i < AH_DEV_SERVO_COUNT; ++i) {
         dev->target[i] = exec->target[i];
         dev->close_target[i] = exec->close[i];
+        dev->speed[i] = exec->speed[i];
+        dev->torque_limit[i] = exec->torque_limit[i];
         dev->load_threshold[i] = (exec->load_threshold[i] == 0u)
                                      ? dev->cfg.load_threshold_default
                                      : exec->load_threshold[i];
@@ -271,6 +275,8 @@ int ah_device_reset(ah_device_t *dev)
     for (i = 0; i < AH_DEV_SERVO_COUNT; ++i) {
         dev->target[i] = dev->cfg.open_target_default;
         dev->close_target[i] = dev->cfg.open_target_default;
+        dev->speed[i] = 0u;
+        dev->torque_limit[i] = 0u;
         dev->load_threshold[i] = dev->cfg.load_threshold_default;
     }
     return 0;
@@ -281,6 +287,20 @@ void ah_device_get_targets(const ah_device_t *dev, int16_t out[AH_DEV_SERVO_COUN
     if (dev != NULL && out != NULL) {
         memcpy(out, dev->target, sizeof(dev->target));
     }
+}
+
+void ah_device_get_profile(const ah_device_t *dev, uint16_t speed[AH_DEV_SERVO_COUNT],
+                           uint16_t torque_limit[AH_DEV_SERVO_COUNT])
+{
+    if (dev != NULL && speed != NULL && torque_limit != NULL) {
+        memcpy(speed, dev->speed, sizeof(dev->speed));
+        memcpy(torque_limit, dev->torque_limit, sizeof(dev->torque_limit));
+    }
+}
+
+uint8_t ah_device_torque_enabled(const ah_device_t *dev)
+{
+    return (dev != NULL) ? dev->torque_enabled : 0u;
 }
 
 void ah_device_get_actual(const ah_device_t *dev, ah_v2_actual_t *out)

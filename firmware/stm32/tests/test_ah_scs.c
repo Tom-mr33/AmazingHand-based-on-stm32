@@ -24,7 +24,10 @@ static int expect_hex(const uint8_t *got, size_t got_len, const char *hex)
 int main(void)
 {
     ah_scs_t scs;
-    uint8_t buf[AH_SCS_SYNC_FRAME_SIZE];
+    uint8_t buf[AH_SCS_SYNC_PROFILE_SIZE];
+    uint8_t torque_values[AH_SCS_SERVO_COUNT];
+    uint16_t speed[AH_SCS_SERVO_COUNT];
+    uint16_t torque[AH_SCS_SERVO_COUNT];
     int16_t target[AH_SCS_SERVO_COUNT];
     size_t i;
 
@@ -42,6 +45,22 @@ int main(void)
         expect_hex(buf, AH_SCS_READ_FRAME_SIZE, "ffff0104023a08b6") != 0) {
         fprintf(stderr, "fail line %d\n", __LINE__); return 1;
     }
+    if (ah_scs_build_sync_torque(0u, buf, sizeof(buf)) != AH_SCS_SYNC_TORQUE_SIZE ||
+        expect_hex(buf, AH_SCS_SYNC_TORQUE_SIZE,
+                   "fffffe14832801010202020302040205020602070208020d") != 0) {
+        fprintf(stderr, "fail line %d\n", __LINE__); return 1;
+    }
+    for (i = 0; i < AH_SCS_SERVO_COUNT; ++i) {
+        speed[i] = 100u;
+        torque[i] = 500u;
+        torque_values[i] = 2u;
+    }
+    (void)torque_values;
+    if (ah_scs_build_sync_profile(speed, torque, buf, sizeof(buf)) != AH_SCS_SYNC_PROFILE_SIZE ||
+        expect_hex(buf, AH_SCS_SYNC_PROFILE_SIZE,
+                   "fffffe2c832e04016400f401026400f401036400f401046400f401056400f401066400f401076400f401086400f40134") != 0) {
+        fprintf(stderr, "fail line %d\n", __LINE__); return 1;
+    }
 
     ah_scs_init(&scs);
     ah_scs_set_targets(&scs, target);
@@ -55,7 +74,7 @@ int main(void)
             fprintf(stderr, "fail line %d\n", __LINE__); return 1;
         }
     }
-    if (scs.write_count != 1u || scs.read_count != AH_SCS_SERVO_COUNT) {
+    if (scs.write_count != 3u || scs.read_count != AH_SCS_SERVO_COUNT) {
         fprintf(stderr, "fail line %d\n", __LINE__); return 1;
     }
 
