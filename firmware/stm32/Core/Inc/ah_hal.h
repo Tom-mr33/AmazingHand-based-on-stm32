@@ -17,7 +17,8 @@ uint32_t ah_hal_now_us(void);
 bool ah_hal_bus_write(const uint8_t *data, size_t len);
 size_t ah_hal_bus_read(uint8_t *data, size_t cap, uint32_t timeout_us);
 
-/* Pi link UART. */
+/* Pi link UART: interrupt RX ring, blocking TX. */
+void ah_hal_uart_init(void);
 size_t ah_hal_uart_read(uint8_t *data, size_t cap);
 bool ah_hal_uart_write(const uint8_t *data, size_t len);
 

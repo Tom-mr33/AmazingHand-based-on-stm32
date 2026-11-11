@@ -160,6 +160,10 @@ bool ah_hal_uart_write(const uint8_t *data, size_t len)
     return true;
 }
 
+void ah_hal_uart_init(void)
+{
+}
+
 void ah_hal_watchdog_init(void)
 {
 }
