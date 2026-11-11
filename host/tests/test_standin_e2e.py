@@ -36,6 +36,7 @@ class StandinE2ETests(unittest.TestCase):
         self.sim(100)
         self.assertTrue(self.ctl.stop_confirmed)
         self.assertTrue(self.ctl.reset())
+        self.sim(100)
         self.assertEqual(self.ctl.state, ControllerState.IDLE)
 
 

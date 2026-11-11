@@ -29,6 +29,8 @@ class Controller:
     error: str = ""
     current_execution: proto.Execution | None = None
     last_exec_at: float = 0.0
+    reset_pending: bool = False
+    reset_sent_at: float = 0.0
     _seq: int = 0
 
     def connect(self) -> proto.Accept:
@@ -42,7 +44,13 @@ class Controller:
         return accept
 
     def close(self) -> None:
-        self.transport.close()
+        try:
+            if self.state not in (ControllerState.ESTOP, ControllerState.FAULT):
+                self.stop()
+        except Exception:
+            pass
+        finally:
+            self.transport.close()
 
     def _next_seq(self) -> int:
         self._seq = (self._seq + 1) & 0xFFFF
@@ -111,15 +119,27 @@ class Controller:
         return True
 
     def reset(self) -> bool:
-        if not self.stop_confirmed:
+        if not self.stop_confirmed or self.reset_pending:
             return False
         self.transport.send_operation(proto.OP_RESET)
-        self.state = ControllerState.IDLE
-        self.motion = None
-        self.current_execution = None
-        self.last_exec_at = 0.0
+        self.reset_pending = True
+        self.reset_sent_at = float(self.clock())
         self.error = ""
         return True
+
+    def _apply_operation(self, op: proto.Operation) -> None:
+        if op.op_type != proto.OP_RESET or not self.reset_pending:
+            return
+        self.reset_pending = False
+        if op.status == 0:
+            self.state = ControllerState.IDLE
+            self.motion = None
+            self.current_execution = None
+            self.last_exec_at = 0.0
+            self.error = ""
+        else:
+            self.state = ControllerState.FAULT
+            self.error = f"reset rejected: status={op.status}"
 
     def _heartbeat(self, now: float) -> None:
         if now - self.last_heartbeat_at >= 0.1:
@@ -155,6 +175,12 @@ class Controller:
             self.last_actual = actuals[-1]
         for health in healths:
             self._apply_health(health, now)
+        for op in operations:
+            self._apply_operation(op)
+        if self.reset_pending and now - self.reset_sent_at > 2.0:
+            self.reset_pending = False
+            self.state = ControllerState.FAULT
+            self.error = "reset timeout"
         if self.state not in (ControllerState.ESTOP, ControllerState.FAULT):
             if now - self.last_health_at > 1.0:
                 self.state = ControllerState.FAULT
