@@ -93,6 +93,7 @@ MuJoCo 实时演示见 [sim/LIVE_CONTROL.md](sim/LIVE_CONTROL.md)。
 
 Pi 依赖：`pip install -r requirements-pi.txt`。系统建议 Raspberry Pi OS 64-bit
 Bookworm（Python 3.11）；旧版 Python 3.9 不支持部分类型语法。
+完整部署/接线/验收见 [docs/design/pi_deploy.md](docs/design/pi_deploy.md)。
 
 ## 开发状态
 
